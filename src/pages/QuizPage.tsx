@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import type { CSSProperties } from "react";
 
 type Question = {
   id: string;
@@ -37,6 +38,46 @@ function parseJsonSafe<T>(raw: string | null | undefined, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+// สไตล์คงที่ (ไม่ขึ้นกับ state) แยกไว้เป็น Record<string, CSSProperties> ล้วนๆ
+const styles: Record<string, CSSProperties> = {
+  page: { maxWidth: 720, margin: "0 auto", padding: "32px 20px", fontFamily: "inherit" },
+  backLink: { display: "inline-block", marginBottom: 16, color: "#6b7280", textDecoration: "none" },
+  progress: { color: "#6b7280", marginBottom: 8, fontSize: 14 },
+  card: { border: "1px solid #e5e7eb", borderRadius: 16, padding: 24, marginBottom: 20 },
+  topic: { display: "inline-block", background: "#eef2ff", color: "#4338ca", fontSize: 12, padding: "4px 10px", borderRadius: 999, marginBottom: 12 },
+  question: { fontSize: 18, fontWeight: 600, marginBottom: 20, lineHeight: 1.6 },
+  confidenceRow: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 },
+  primaryBtn: { background: "#4338ca", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 10, fontSize: 15, cursor: "pointer" },
+  explanation: { background: "#f9fafb", borderRadius: 12, padding: 16, marginTop: 16 },
+};
+
+// สไตล์ที่ขึ้นกับ state แยกเป็นฟังก์ชันต่างหาก ไม่ปนกับ record ด้านบน
+function choiceStyle(active: boolean, isAnswer: boolean, showResult: boolean, revealed: boolean): CSSProperties {
+  return {
+    display: "block",
+    width: "100%",
+    textAlign: "left",
+    padding: "12px 16px",
+    borderRadius: 10,
+    border: "1px solid " + (showResult && isAnswer ? "#16a34a" : active ? "#4338ca" : "#e5e7eb"),
+    background: showResult && isAnswer ? "#f0fdf4" : active ? "#eef2ff" : "#fff",
+    marginBottom: 10,
+    cursor: revealed ? "default" : "pointer",
+  };
+}
+
+function confidenceBtnStyle(active: boolean): CSSProperties {
+  return {
+    padding: "8px 12px",
+    borderRadius: 999,
+    border: "1px solid " + (active ? "#4338ca" : "#e5e7eb"),
+    background: active ? "#4338ca" : "#fff",
+    color: active ? "#fff" : "#374151",
+    fontSize: 13,
+    cursor: "pointer",
+  };
 }
 
 export default function QuizPage() {
@@ -94,7 +135,7 @@ export default function QuizPage() {
           user_answer: selectedChoice,
           correct,
           time_seconds: timeSeconds,
-          error_level: correct ? null : null, // ผู้ใช้เลือกระดับ error เองภายหลังได้ในเวอร์ชันถัดไป
+          error_level: null, // ผู้ใช้เลือกระดับ error เองภายหลังได้ในเวอร์ชันถัดไป
         }),
       });
     } catch {
@@ -108,38 +149,6 @@ export default function QuizPage() {
     setConfidence(null);
     setRevealed(false);
     setStartTime(Date.now());
-  };
-
-  const styles: Record<string, React.CSSProperties> = {
-    page: { maxWidth: 720, margin: "0 auto", padding: "32px 20px", fontFamily: "inherit" },
-    backLink: { display: "inline-block", marginBottom: 16, color: "#6b7280", textDecoration: "none" },
-    progress: { color: "#6b7280", marginBottom: 8, fontSize: 14 },
-    card: { border: "1px solid #e5e7eb", borderRadius: 16, padding: 24, marginBottom: 20 },
-    topic: { display: "inline-block", background: "#eef2ff", color: "#4338ca", fontSize: 12, padding: "4px 10px", borderRadius: 999, marginBottom: 12 },
-    question: { fontSize: 18, fontWeight: 600, marginBottom: 20, lineHeight: 1.6 },
-    choice: (active: boolean, isAnswer: boolean, showResult: boolean): React.CSSProperties => ({
-      display: "block",
-      width: "100%",
-      textAlign: "left",
-      padding: "12px 16px",
-      borderRadius: 10,
-      border: "1px solid " + (showResult && isAnswer ? "#16a34a" : active ? "#4338ca" : "#e5e7eb"),
-      background: showResult && isAnswer ? "#f0fdf4" : active ? "#eef2ff" : "#fff",
-      marginBottom: 10,
-      cursor: revealed ? "default" : "pointer",
-    }),
-    confidenceRow: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 },
-    confidenceBtn: (active: boolean): React.CSSProperties => ({
-      padding: "8px 12px",
-      borderRadius: 999,
-      border: "1px solid " + (active ? "#4338ca" : "#e5e7eb"),
-      background: active ? "#4338ca" : "#fff",
-      color: active ? "#fff" : "#374151",
-      fontSize: 13,
-      cursor: "pointer",
-    }),
-    primaryBtn: { background: "#4338ca", color: "#fff", border: "none", padding: "12px 24px", borderRadius: 10, fontSize: 15, cursor: "pointer" },
-    explanation: { background: "#f9fafb", borderRadius: 12, padding: 16, marginTop: 16 },
   };
 
   if (loading) {
@@ -170,7 +179,7 @@ export default function QuizPage() {
             {choices.map((choice) => (
               <button
                 key={choice}
-                style={styles.choice(selectedChoice === choice, choice === current.answer, revealed)}
+                style={choiceStyle(selectedChoice === choice, choice === current.answer, revealed, revealed)}
                 onClick={() => !revealed && setSelectedChoice(choice)}
                 disabled={revealed}
               >
@@ -187,7 +196,7 @@ export default function QuizPage() {
                   {CONFIDENCE_LABELS.map((c) => (
                     <button
                       key={c.value}
-                      style={styles.confidenceBtn(confidence === c.value)}
+                      style={confidenceBtnStyle(confidence === c.value)}
                       onClick={() => setConfidence(c.value)}
                     >
                       {c.label}
