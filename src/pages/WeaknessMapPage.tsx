@@ -25,6 +25,9 @@ const styles: Record<string, CSSProperties> = {
   table: { width: "100%", borderCollapse: "collapse", fontSize: 14 },
   th: { textAlign: "left", padding: "10px 12px", borderBottom: "2px solid #e5e7eb", color: "#6b7280", fontWeight: 600 },
   td: { padding: "10px 12px", borderBottom: "1px solid #f3f4f6" },
+  summaryGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 28 },
+  summaryCard: { border: "1px solid #e5e7eb", borderRadius: 14, padding: 18 },
+  summaryAccuracy: { fontSize: 28, fontWeight: 700, margin: "6px 0 12px" },
 };
 
 function legendDotStyle(color: string): CSSProperties {
@@ -52,6 +55,34 @@ function rowStatus(row: WeaknessRow): { label: string; bg: string; dot: string }
     return { label: "จุดอ่อนที่ต้องฝึกเพิ่ม", bg: "#fff7ed", dot: "#ea580c" };
   }
   return { label: "อยู่ในเกณฑ์ดี", bg: "#f0fdf4", dot: "#16a34a" };
+}
+
+type SubjectSummary = {
+  subject: string;
+  totalAttempts: number;
+  overallAccuracy: number;
+  needsReview: WeaknessRow[];
+};
+
+function summarizeBySubject(rows: WeaknessRow[]): SubjectSummary[] {
+  const bySubject = new Map<string, WeaknessRow[]>();
+  rows.forEach((r) => {
+    const arr = bySubject.get(r.subject) ?? [];
+    arr.push(r);
+    bySubject.set(r.subject, arr);
+  });
+
+  return Array.from(bySubject.entries()).map(([subject, subjectRows]) => {
+    const totalAttempts = subjectRows.reduce((sum, r) => sum + r.total_attempts, 0);
+    const totalCorrect = subjectRows.reduce((sum, r) => sum + r.correct_attempts, 0);
+    const overallAccuracy = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 1000) / 10 : 0;
+
+    const needsReview = subjectRows
+      .filter((r) => (r.accuracy_pct ?? 0) < 60)
+      .sort((a, b) => (a.accuracy_pct ?? 0) - (b.accuracy_pct ?? 0));
+
+    return { subject, totalAttempts, overallAccuracy, needsReview };
+  });
 }
 
 export default function WeaknessMapPage() {
@@ -84,6 +115,36 @@ export default function WeaknessMapPage() {
 
       {!loading && !errorMsg && rows.length > 0 && (
         <>
+          <h3 style={{ marginBottom: 12 }}>สรุปรายวิชา</h3>
+          <div style={styles.summaryGrid}>
+            {summarizeBySubject(rows).map((s) => (
+              <div key={s.subject} style={styles.summaryCard}>
+                <div style={{ fontWeight: 600 }}>{SUBJECT_TITLES[s.subject] ?? s.subject}</div>
+                <div style={styles.summaryAccuracy}>
+                  {s.overallAccuracy}%
+                  <span style={{ fontSize: 12, fontWeight: 400, color: "#6b7280", marginLeft: 6 }}>
+                    ({s.totalAttempts} ครั้งที่ทำ)
+                  </span>
+                </div>
+                {s.needsReview.length === 0 ? (
+                  <p style={{ fontSize: 13, color: "#16a34a" }}>ยังไม่มีจุดอ่อนที่ต้องเร่งแก้</p>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 13, color: "#374151", marginBottom: 6 }}>ควรไปเรียนรู้เพิ่ม:</p>
+                    <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
+                      {s.needsReview.slice(0, 5).map((r) => (
+                        <li key={r.topic}>
+                          {r.topic} ({r.accuracy_pct}%)
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <h3 style={{ marginBottom: 12 }}>รายละเอียดทุกหัวข้อ</h3>
           <div style={styles.legend}>
             <span><span style={legendDotStyle("#dc2626")} />มั่นใจเกินจริง</span>
             <span><span style={legendDotStyle("#ea580c")} />จุดอ่อนที่ต้องฝึกเพิ่ม</span>
