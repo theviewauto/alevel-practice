@@ -1,0 +1,7 @@
+name = "alevel-practice"
+compatibility_date = "2026-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "alevel-practice-db"
+database_id = "a3545599-b757-402f-ad32-e8d230e78eb3"
