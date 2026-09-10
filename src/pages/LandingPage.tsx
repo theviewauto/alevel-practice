@@ -157,13 +157,23 @@ function LandingPage() {
                 ))}
               </div>
 
-              <button
-                className="subject-button"
-                onClick={() => chooseSubject(subject.id)}
-              >
-                เริ่มฝึกวิชานี้
-                <ArrowRight size={18} />
-              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  className="subject-button"
+                  style={{ flex: 1, background: "#6d28d9" }}
+                  onClick={() => navigate(`/identify/${subject.id}`)}
+                >
+                  ฝึกวิเคราะห์
+                </button>
+                <button
+                  className="subject-button"
+                  style={{ flex: 1 }}
+                  onClick={() => chooseSubject(subject.id)}
+                >
+                  ฝึกทำเต็ม
+                  <ArrowRight size={18} />
+                </button>
+              </div>
             </article>
           ))}
         </div>
