@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   ArrowRight,
   BookOpenCheck,
@@ -82,6 +82,7 @@ function LandingPage() {
         <div className="nav-actions">
           <a href="#subjects">รายวิชา</a>
           <a href="#features">ฟีเจอร์</a>
+          <Link to="/weakness">ผลการฝึก</Link>
           <button className="button button-outline">เข้าสู่ระบบ</button>
         </div>
       </nav>
